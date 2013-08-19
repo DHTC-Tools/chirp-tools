@@ -8,34 +8,36 @@
 # description: Starts and stop chirp servers for all users
 
 chirp_users() {
-  mkdir -p /var/log/chirp >/dev/null 2>&1
+        mkdir -p /var/log/chirp >/dev/null 2>&1
+        catalog_server & > /var/log/chirp/chirp_catalog.log 2>&1
         getent group auth | cut -d: -f4 | tr , '\012' | sort | while read authuser; do
-    su - $authuser sh -c "chirp_server --advertise=stash.osgconnect.net --root=file:///home/$authuser/data --port=`id -u $authuser` &" > /var/log/chirp/chirp.$authuser.log 2>&1
-  done
+                su - $authuser sh -c "chirp_server --advertise=stash.osgconnect.net --root=file:///home/$authuser/data --port=`id -u $authuser` &" > /var/log/chirp/chirp.$authuser.log 2>&1
+        done
 }
 
 start () {
-  chirp_users
+        chirp_users
 }
 
 stop () {
-  pkill chirp_server
+        pkill chirp_server
+        pkill catalog_server
 }
 
 restart () {
-  echo 'Stopping chirpd processes...'
-  stop
-  echo 'Pausing...'
-  sleep 5
-  echo 'Starting chirpd processes...'
-  start
+        echo 'Stopping chirpd processes...'
+        stop
+        echo 'Pausing...'
+        sleep 5
+        echo 'Starting chirpd processes...'
+        start
 }
 
 cmd="$1"; [ -n "$cmd" ] && shift 1;
 case "$cmd" in
-  start)  start "$@";;
-  stop) stop "$@";;
-  restart)  restart "$@";;
-  *)    echo >&2 "usage: $0 {start | stop | restart}";;
+        start)  start "$@";;
+        stop)   stop "$@";;
+        restart)        restart "$@";;
+        *)              echo >&2 "usage: $0 {start | stop | restart}";;
 esac
 
