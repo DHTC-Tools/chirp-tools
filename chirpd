@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# /etc/init.d/chirpd - Start/stop all chirp daemons for authorized users.
+#
+# The following two lines allow this script to be managed by Fedora's chkconfig program.
+#
+# chkconfig: 345 99 99
+# description: Starts and stop chirp servers for all users
+
+chirp_users() {
+  mkdir -p /var/log/chirp >/dev/null 2>&1
+        getent group auth | cut -d: -f4 | tr , '\012' | sort | while read authuser; do
+    su - $authuser sh -c "chirp_server --advertise=stash.osgconnect.net --root=file:///home/$authuser/data --port=`id -u $authuser` &" > /var/log/chirp/chirp.$authuser.log 2>&1
+  done
+}
+
+start () {
+  chirp_users
+}
+
+stop () {
+  pkill chirp_server
+}
+
+restart () {
+  echo 'Stopping chirpd processes...'
+  stop
+  echo 'Pausing...'
+  sleep 5
+  echo 'Starting chirpd processes...'
+  start
+}
+
+cmd="$1"; [ -n "$cmd" ] && shift 1;
+case "$cmd" in
+  start)  start "$@";;
+  stop) stop "$@";;
+  restart)  restart "$@";;
+  *)    echo >&2 "usage: $0 {start | stop | restart}";;
+esac
+
